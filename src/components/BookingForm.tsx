@@ -42,7 +42,6 @@ const BookingForm = ({ onSuccess, onCancel, onError, initialData }: Props) => {
     const fetchRooms = async () => {
       try {
         // Asumsi kamu punya endpoint GET /api/room (RoomController)
-        // Jika belum ada, nanti kita buat. Sementara akan kosong.
         const response = await api.get('/api/room'); 
         setRooms(response.data);
       } catch (error) {
