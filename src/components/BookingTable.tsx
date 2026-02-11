@@ -1,12 +1,15 @@
 import { Peminjaman } from '../types';
-import { Check, X } from 'lucide-react'; // Kita pakai icon supaya lebih pro
+import { Check, X, Trash2, Edit, Lock } from 'lucide-react'; // Kita pakai icon supaya lebih pro
 
 interface Props {
   data: Peminjaman[];
   onUpdateStatus: (id: number, status: string) => void; // Tambahkan fungsi handler
+  onDelete: (id: number) => void;
+  onEdit: (item: Peminjaman) => void;
+  isAdmin: boolean;
 }
 
-const BookingTable = ({ data, onUpdateStatus }: Props) => {
+const BookingTable = ({ data, onUpdateStatus, onDelete, onEdit, isAdmin }: Props) => {
   return (
     <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-800/60 overflow-hidden">
       <div className="p-6 border-b border-slate-800/60 flex justify-between items-center">
@@ -54,7 +57,8 @@ const BookingTable = ({ data, onUpdateStatus }: Props) => {
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex justify-center gap-2">
+                  {isAdmin ? (
+                  <div className="flex justify-center gap-2 items-center">
                     {/* Tombol hanya muncul jika status masih Pending */}
                     {item.status === 'Pending' ? (
                       <>
@@ -76,7 +80,29 @@ const BookingTable = ({ data, onUpdateStatus }: Props) => {
                     ) : (
                       <span className="text-xs font-medium text-slate-600 italic">Selesai</span>
                     )}
+
+                    <button 
+                      onClick={() => onEdit(item)}
+                      className="p-2 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm ml-2"
+                      title="Edit Data"
+                    >
+                      <Edit size={18} />
+                    </button>
+
+                    <button 
+                      onClick={() => onDelete(item.id)}
+                      className="p-2 bg-slate-800/50 text-slate-400 border border-slate-700 rounded-lg hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30 transition-all shadow-sm"
+                      title="Hapus Permanen"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
+                  ) : (
+                    <div className="flex justify-center items-center gap-2 text-slate-600">
+                      <Lock size={14} />
+                      <span className="text-xs italic">Admin Only</span>
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}
