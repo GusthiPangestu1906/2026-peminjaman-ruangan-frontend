@@ -37,7 +37,9 @@ const BookingTable = ({ data, onUpdateStatus, onDelete, onEdit, isAdmin }: Props
                     ? new Date(item.tanggalPinjam).toLocaleDateString('id-ID', {
                         day: '2-digit',
                         month: 'long',
-                        year: 'numeric'
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
                       })
                     : '-'}
                 </td>
@@ -61,14 +63,14 @@ const BookingTable = ({ data, onUpdateStatus, onDelete, onEdit, isAdmin }: Props
                           className="p-2 bg-green-500/20 text-green-400 border border-green-500/30 rounded-lg hover:bg-green-500 hover:text-white transition-all shadow-sm"
                           title="Setujui"
                         >
-                          <Check size={16} />
+                          <Check size={18} />
                         </button>
                         <button 
                           onClick={() => onUpdateStatus(item.id, 'Rejected')}
                           className="p-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500 hover:text-white transition-all shadow-sm"
                           title="Tolak"
                         >
-                          <X size={16} />
+                          <X size={18} />
                         </button>
                       </>
                     ) : (
@@ -102,6 +104,13 @@ const BookingTable = ({ data, onUpdateStatus, onDelete, onEdit, isAdmin }: Props
                 </td>
               </tr>
             ))}
+            {data.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-6 py-10 text-center text-slate-500">
+                  Belum ada data peminjaman.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
