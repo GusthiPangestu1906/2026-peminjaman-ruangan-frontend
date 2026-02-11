@@ -1,21 +1,6 @@
 import { useEffect, useState } from 'react'
 import api from './services/api'
 import { Peminjaman } from './types'
-// ... existing code ...
-  // Fungsi Login Hardcoded
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Ubah 'admin' dan 'admin123' di sini jika ingin mengganti kredensial
-    if (loginCreds.username === 'admin' && loginCreds.password === 'admin123') {
-      setIsAdmin(true);
-      setShowLogin(false);
-      setLoginCreds({ username: '', password: '' });
-      showToast('Login berhasil! Mode Admin aktif.', 'success');
-    } else {
-      showToast('Username atau password salah!', 'error');
-    }
-  };
-// ... existing code ...
 import { LayoutDashboard, CheckCircle, Clock, XCircle, Plus, Search, Filter, LogIn, LogOut, Lock, ChevronLeft, ChevronRight } from 'lucide-react'
 import BookingTable from './components/BookingTable';
 import BookingForm from './components/BookingForm';
@@ -153,7 +138,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#0B0D14] text-slate-200 font-sans selection:bg-blue-500/30 relative overflow-hidden">
-      {/* Background Gradients */}
+      {/* Background Gradients */} 
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
           <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] opacity-50"></div>
           <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] opacity-50"></div>
