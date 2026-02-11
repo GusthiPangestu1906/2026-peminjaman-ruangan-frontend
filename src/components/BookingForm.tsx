@@ -1,21 +1,36 @@
 import { useState, useEffect } from 'react';
 import { Calendar, User, AlignLeft, Home, Save, X } from 'lucide-react';
 import api from '../services/api';
-import { Room } from '../types';
+import { Room, Peminjaman } from '../types';
 
 interface Props {
   onSuccess: () => void;
   onCancel: () => void;
   onError?: (message: string) => void;
+  initialData?: Peminjaman | null;
 }
 
-const BookingForm = ({ onSuccess, onCancel, onError }: Props) => {
+const BookingForm = ({ onSuccess, onCancel, onError, initialData }: Props) => {
+  // Helper: Format tanggal ISO ke format datetime-local (YYYY-MM-DDThh:mm)
+  const formatDateForInput = (dateString: string) => {
+    const date = new Date(dateString);
+    const offset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+  };
+
+  // Helper: Ambil waktu sekarang untuk batasan input (min attribute)
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - offset).toISOString().slice(0, 16);
+  };
+
   // State untuk menampung input user
   const [formData, setFormData] = useState({
-    peminjam: '',
-    roomId: 0,
-    tanggalPinjam: '',
-    keperluan: ''
+    peminjam: initialData?.peminjam || '',
+    roomId: initialData?.roomId || 0,
+    tanggalPinjam: initialData?.tanggalPinjam ? formatDateForInput(initialData.tanggalPinjam.toString()) : '',
+    keperluan: initialData?.keperluan || ''
   });
 
   // State untuk daftar ruangan (Dropdown)
@@ -52,12 +67,18 @@ const BookingForm = ({ onSuccess, onCancel, onError }: Props) => {
     setLoading(true);
 
     try {
-      // Kirim data ke endpoint POST yang baru kita perbaiki di Backend
-      await api.post('/api/Peminjaman', {
+      const payload = {
         ...formData,
         tanggalPinjam: new Date(formData.tanggalPinjam).toISOString(), // Format tanggal ISO
-        status: 'Pending' // Default status
-      });
+      };
+
+      if (initialData) {
+        // Mode Edit: Gunakan PUT
+        await api.put(`/api/Peminjaman/${initialData.id}`, payload);
+      } else {
+        // Mode Create: Gunakan POST
+        await api.post('/api/Peminjaman', { ...payload, status: 'Pending' });
+      }
       
       onSuccess(); // Kembali ke dashboard / refresh data
     } catch (error) {
@@ -77,9 +98,9 @@ const BookingForm = ({ onSuccess, onCancel, onError }: Props) => {
       <div className="mb-6 flex justify-between items-start">
         <div>
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            Form Peminjaman
+            {initialData ? 'Edit Peminjaman' : 'Form Peminjaman'}
             </h2>
-            <p className="text-slate-400 text-sm mt-1">Isi data lengkap untuk mengajukan ruangan.</p>
+            <p className="text-slate-400 text-sm mt-1">{initialData ? 'Ubah data peminjaman yang sudah ada.' : 'Isi data lengkap untuk mengajukan ruangan.'}</p>
         </div>
         <button onClick={onCancel} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors">
             <X size={20} />
@@ -139,6 +160,7 @@ const BookingForm = ({ onSuccess, onCancel, onError }: Props) => {
               name="tanggalPinjam"
               required
               value={formData.tanggalPinjam}
+              min={getCurrentDateTime()} // Mencegah pemilihan tanggal masa lalu di UI
               onChange={handleChange}
               className="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none text-white placeholder-slate-600 transition-all [color-scheme:dark]"
             />
@@ -170,7 +192,7 @@ const BookingForm = ({ onSuccess, onCancel, onError }: Props) => {
             className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 text-white py-3 px-6 rounded-xl font-bold hover:from-blue-500 hover:to-blue-400 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
           >
             <Save size={20} />
-            {loading ? 'Mengirim...' : 'Ajukan Peminjaman'}
+            {loading ? 'Menyimpan...' : (initialData ? 'Simpan Perubahan' : 'Ajukan Peminjaman')}
           </button>
           
           <button

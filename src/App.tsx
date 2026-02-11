@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import api from './services/api'
 import { Peminjaman } from './types'
-import { LayoutDashboard, CheckCircle, Clock, XCircle, PlusCircle, Filter } from 'lucide-react'
+import { LayoutDashboard, CheckCircle, Clock, XCircle, PlusCircle, Filter, Search, ChevronLeft, ChevronRight, LogIn, LogOut, Lock } from 'lucide-react'
 import BookingTable from './components/BookingTable';
 import BookingForm from './components/BookingForm';
 import Toast from './components/Toast';
@@ -11,8 +11,15 @@ function App() {
   const [data, setData] = useState<Peminjaman[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false); // State untuk toggle form
+  const [showLogin, setShowLogin] = useState(false); // State untuk modal login
+  const [isAdmin, setIsAdmin] = useState(false); // State status login admin
+  const [loginCreds, setLoginCreds] = useState({ username: '', password: '' });
+  const [selectedBooking, setSelectedBooking] = useState<Peminjaman | null>(null); // State untuk data yang diedit
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [filterStatus, setFilterStatus] = useState('All'); // State untuk filter
+  const [searchTerm, setSearchTerm] = useState(''); // State untuk search
+  const [currentPage, setCurrentPage] = useState(1); // State untuk pagination
+  const itemsPerPage = 5; // Jumlah item per halaman
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -31,6 +38,11 @@ function App() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Reset ke halaman 1 jika filter atau search berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, searchTerm]);
 
   // Fungsi untuk mengambil semua data dari backend
   const fetchData = async () => {
@@ -79,15 +91,65 @@ function App() {
     }
   };
 
+  // Fungsi untuk menghapus data (Delete)
+  const processDelete = async (id: number) => {
+    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+    try {
+      await api.delete(`/api/Peminjaman/${id}`);
+      fetchData();
+      showToast('Data peminjaman berhasil dihapus', 'success');
+    } catch (error) {
+      console.error("Gagal menghapus data:", error);
+      showToast("Gagal menghapus data.", 'error');
+    }
+  };
+
+  const handleDelete = (id: number) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus Data?',
+      message: 'Apakah Anda yakin ingin menghapus data peminjaman ini secara permanen? Tindakan ini tidak dapat dibatalkan.',
+      type: 'danger',
+      onConfirm: () => processDelete(id)
+    });
+  };
+
+  // Fungsi untuk membuka form edit
+  const handleEdit = (item: Peminjaman) => {
+    setSelectedBooking(item);
+    setShowForm(true);
+  };
+
+  // Fungsi Login Hardcoded
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loginCreds.username === 'admin' && loginCreds.password === 'admin123') {
+      setIsAdmin(true);
+      setShowLogin(false);
+      setLoginCreds({ username: '', password: '' });
+      showToast('Login berhasil! Mode Admin aktif.', 'success');
+    } else {
+      showToast('Username atau password salah!', 'error');
+    }
+  };
+
   // Logika Filter Statistik (Dihitung otomatis dari state 'data')
   const approved = data.filter(p => p.status === 'Approved').length;
   const pending = data.filter(p => p.status === 'Pending').length;
   const rejected = data.filter(p => p.status === 'Rejected').length;
 
   // Logika Filter Data (Client-side)
-  const filteredData = filterStatus === 'All' 
-    ? data 
-    : data.filter(item => item.status === filterStatus);
+  const filteredData = data.filter(item => {
+    const matchesStatus = filterStatus === 'All' || item.status === filterStatus;
+    const matchesSearch = item.peminjam.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (item.room?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
+
+  // Logika Pagination
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
   if (loading && data.length === 0) {
     return (
@@ -114,6 +176,19 @@ function App() {
         <div className="col-span-12 md:col-span-8 bg-slate-900/60 backdrop-blur-xl border border-slate-800/60 p-8 rounded-3xl flex flex-col justify-center relative overflow-hidden group">
             <div className="absolute right-0 top-0 w-64 h-64 bg-gradient-to-br from-blue-500/10 to-purple-500/10 blur-3xl rounded-full -mr-10 -mt-10 transition-all group-hover:scale-110"></div>
             <div className="relative z-10">
+                <div className="absolute top-0 right-0">
+                  {isAdmin ? (
+                    <button onClick={() => setIsAdmin(false)} className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 text-rose-400 rounded-xl hover:bg-rose-500/20 transition-all text-sm font-medium border border-rose-500/20">
+                      <LogOut size={16} />
+                      Logout Admin
+                    </button>
+                  ) : (
+                    <button onClick={() => setShowLogin(true)} className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 text-slate-300 rounded-xl hover:bg-slate-800 transition-all text-sm font-medium border border-slate-700">
+                      <LogIn size={16} />
+                      Login Admin
+                    </button>
+                  )}
+                </div>
                 <div className="flex items-center gap-3 mb-4">
                     <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400 border border-blue-500/20">
                         <LayoutDashboard size={20} />
@@ -180,25 +255,88 @@ function App() {
         {/* Bento Item 6: Table (Full Width) */}
         <div className="col-span-12 space-y-4">
           {/* Filter Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-            <div className="flex items-center gap-2 text-slate-500 text-sm font-medium mr-2 px-2">
-                <Filter size={16} />
-                <span>Filter:</span>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+              <div className="flex items-center gap-2 text-slate-500 text-sm font-medium mr-2 px-2">
+                  <Filter size={16} />
+                  <span>Filter:</span>
+              </div>
+              {['All', 'Pending', 'Approved', 'Rejected'].map((status) => (
+                  <button
+                  key={status}
+                  onClick={() => setFilterStatus(status)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                      filterStatus === status 
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
+                      : 'bg-slate-900/40 text-slate-400 hover:bg-slate-800 border border-slate-800/50'
+                  }`}
+                  >{status}</button>
+              ))}
             </div>
-            {['All', 'Pending', 'Approved', 'Rejected'].map((status) => (
-                <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
-                    filterStatus === status 
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
-                    : 'bg-slate-900/40 text-slate-400 hover:bg-slate-800 border border-slate-800/50'
-                }`}
-                >{status}</button>
-            ))}
+
+            {/* Search Bar */}
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+              <input 
+                type="text" 
+                placeholder="Cari peminjam atau ruangan..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-900/40 border border-slate-800/50 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+              />
+            </div>
           </div>
 
-          <BookingTable data={filteredData} onUpdateStatus={handleUpdateStatus} />
+          <BookingTable 
+            data={paginatedData} 
+            onUpdateStatus={handleUpdateStatus} 
+            onDelete={handleDelete} 
+            onEdit={handleEdit} 
+            isAdmin={isAdmin}
+          />
+
+          {/* Pagination Controls */}
+          {filteredData.length > itemsPerPage && (
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4 px-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <span className="text-sm text-slate-500 order-2 sm:order-1">
+                Menampilkan <span className="text-slate-300 font-medium">{startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredData.length)}</span> dari <span className="text-slate-300 font-medium">{filteredData.length}</span> data
+              </span>
+              
+              <div className="flex items-center gap-2 order-1 sm:order-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                
+                <div className="flex items-center gap-1 bg-slate-900/40 p-1 rounded-xl border border-slate-800/50">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
+                          : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -215,12 +353,14 @@ function App() {
             {/* Modal Content */}
             <div className="relative z-10 w-full max-w-lg" style={{ animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
                 <BookingForm 
+                    initialData={selectedBooking}
                     onSuccess={() => {
                         setShowForm(false);
+                        setSelectedBooking(null);
                         fetchData();
-                        showToast('Peminjaman berhasil diajukan!', 'success');
+                        showToast(selectedBooking ? 'Data berhasil diperbarui!' : 'Peminjaman berhasil diajukan!', 'success');
                     }} 
-                    onCancel={() => setShowForm(false)} 
+                    onCancel={() => { setShowForm(false); setSelectedBooking(null); }} 
                     onError={(msg) => showToast(msg, 'error')}
                 />
             </div>
@@ -240,6 +380,47 @@ function App() {
                     to { opacity: 1; transform: scale(1); } 
                 }
             `}</style>
+        </div>
+      )}
+
+      {/* Login Modal */}
+      {showLogin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowLogin(false)}></div>
+          <div className="relative z-10 w-full max-w-md bg-[#0F111A] p-8 rounded-3xl border border-slate-800 shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-16 h-16 bg-blue-600/10 rounded-full flex items-center justify-center text-blue-500 mb-4">
+                <Lock size={32} />
+              </div>
+              <h2 className="text-2xl font-bold text-white">Admin Login</h2>
+              <p className="text-slate-400 text-sm">Masukkan kredensial untuk akses admin.</p>
+            </div>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Username</label>
+                <input 
+                  type="text" 
+                  value={loginCreds.username}
+                  onChange={e => setLoginCreds({...loginCreds, username: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
+                  placeholder="admin"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+                <input 
+                  type="password" 
+                  value={loginCreds.password}
+                  onChange={e => setLoginCreds({...loginCreds, password: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
+                  placeholder="admin123"
+                />
+              </div>
+              <button type="submit" className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20">
+                Masuk
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
