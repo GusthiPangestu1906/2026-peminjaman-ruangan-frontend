@@ -154,7 +154,7 @@ function App() {
                 <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400 border border-blue-500/20">
                     <LayoutDashboard size={20} />
                 </div>
-                <span className="text-blue-400 font-bold tracking-wider text-xs uppercase">Admin Dashboard <span className="text-slate-600 mx-2">|</span> v1.0.0</span>
+                <span className="text-blue-400 font-bold tracking-wider text-xs uppercase">Admin Dashboard <span className="text-slate-600 mx-2">|</span> v1.1.0</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-2">
                 Peminjaman <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Ruangan</span>
