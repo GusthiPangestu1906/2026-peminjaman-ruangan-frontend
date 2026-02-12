@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import api from './services/api'
-import { Peminjaman } from './types'
-import { LayoutDashboard, CheckCircle, Clock, XCircle, Plus, Search, Filter, LogIn, LogOut, Lock, ChevronLeft, ChevronRight } from 'lucide-react'
+import type { Peminjaman } from './types'
+import { LayoutDashboard, CheckCircle, Clock, XCircle, Plus, Search, Filter, LogIn, LogOut, Lock, ChevronLeft, ChevronRight, CalendarSearch, X } from 'lucide-react'
 import BookingTable from './components/BookingTable';
 import BookingForm from './components/BookingForm';
+import RoomAvailability from './components/RoomAvailability';
 import Toast from './components/Toast';
 import ConfirmationModal from './components/ConfirmationModal';
 
@@ -12,6 +13,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
+  const [showRoomCheck, setShowRoomCheck] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loginCreds, setLoginCreds] = useState({ username: '', password: '' });
   const [selectedBooking, setSelectedBooking] = useState<Peminjaman | null>(null);
@@ -172,6 +174,13 @@ function App() {
                 Login Admin
               </button>
             )}
+            <button 
+              onClick={() => setShowRoomCheck(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-slate-800/50 text-slate-300 rounded-xl hover:bg-slate-800 transition-all text-sm font-medium border border-slate-700"
+            >
+              <CalendarSearch size={18} />
+              Cek Ruangan
+            </button>
             <button 
               onClick={() => setShowForm(true)}
               className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 active:scale-95 border border-blue-400/20"
@@ -337,6 +346,23 @@ function App() {
                   Masuk
                 </button>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Room Availability Modal */}
+        {showRoomCheck && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+            <div className="relative w-full max-w-6xl bg-[#0F111A] rounded-3xl border border-slate-800 shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
+              <button 
+                onClick={() => setShowRoomCheck(false)}
+                className="absolute top-6 right-6 p-2 bg-slate-800/50 text-slate-400 rounded-full hover:bg-slate-700 hover:text-white transition-colors z-10"
+              >
+                <X size={24} />
+              </button>
+              <div className="p-2">
+                <RoomAvailability />
+              </div>
             </div>
           </div>
         )}

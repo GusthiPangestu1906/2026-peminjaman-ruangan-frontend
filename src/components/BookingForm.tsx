@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Calendar, User, AlignLeft, Home, Save, X } from 'lucide-react';
 import api from '../services/api';
-import { Room, Peminjaman } from '../types';
+import type { Room, Peminjaman } from '../types';
+import { AxiosError } from 'axios';
 
 interface Props {
   onSuccess: () => void;
@@ -36,6 +37,7 @@ const BookingForm = ({ onSuccess, onCancel, onError, initialData }: Props) => {
   // State untuk daftar ruangan (Dropdown)
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState('');
 
   // Ambil daftar ruangan dari Backend saat komponen muncul
   useEffect(() => {
@@ -64,6 +66,7 @@ const BookingForm = ({ onSuccess, onCancel, onError, initialData }: Props) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setFormError('');
 
     try {
       const payload = {
@@ -81,13 +84,20 @@ const BookingForm = ({ onSuccess, onCancel, onError, initialData }: Props) => {
       
       onSuccess(); // Kembali ke dashboard / refresh data
     } catch (error) {
-      console.error(error);
-      if (onError) {
-        onError('Gagal mengajukan peminjaman. Pastikan semua data terisi!');
-      } else {
-        alert('Gagal mengajukan peminjaman. Pastikan semua data terisi!');
+      let errorMessage = 'Gagal mengajukan peminjaman. Pastikan semua data terisi!';
+      
+      const err = error as AxiosError<{ message: string }>;
+      if (err.response && err.response.data && err.response.data.message) {
+        errorMessage = err.response.data.message;
       }
-    } finally {
+
+      console.error(errorMessage, error);
+      setFormError(errorMessage);
+      if (onError) {
+        onError(errorMessage);
+      } else {
+        // Alert dihapus karena sudah ada inline error message di UI
+      }
       setLoading(false);
     }
   };
@@ -106,6 +116,12 @@ const BookingForm = ({ onSuccess, onCancel, onError, initialData }: Props) => {
         </button>
       </div>
 
+      {formError && (
+        <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-lg mb-6 flex items-center gap-3">
+          <X size={20} className="shrink-0" />
+          {formError}
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Input Nama */}
         <div>
