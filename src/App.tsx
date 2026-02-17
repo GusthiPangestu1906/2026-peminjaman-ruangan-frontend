@@ -116,12 +116,12 @@ function App() {
   const pending = data.filter(p => p.status === 'Pending').length;
   const rejected = data.filter(p => p.status === 'Rejected').length;
 
-  // Logika Pagination
-  const totalPages = Math.ceil(data.length / itemsPerPage);
-  const paginatedData = data.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Logika Pagination & Definisi Variabel untuk JSX
+  const filteredData = data;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
@@ -230,57 +230,6 @@ function App() {
               </div>
             </div>
           </div>
-
-          <BookingTable 
-            data={paginatedData} 
-            onUpdateStatus={handleUpdateStatus} 
-            onDelete={handleDelete} 
-            onEdit={handleEdit} 
-            isAdmin={isAdmin}
-          />
-
-          {/* Pagination Controls */}
-          {filteredData.length > itemsPerPage && (
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4 px-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <span className="text-sm text-slate-500 order-2 sm:order-1">
-                Menampilkan <span className="text-slate-300 font-medium">{startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredData.length)}</span> dari <span className="text-slate-300 font-medium">{filteredData.length}</span> data
-              </span>
-              
-              <div className="flex items-center gap-2 order-1 sm:order-2">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                
-                <div className="flex items-center gap-1 bg-slate-900/40 p-1 rounded-xl border border-slate-800/50">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
-                          : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="p-2 rounded-xl bg-slate-900/40 border border-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
-                >
-                  <ChevronRight size={20} />
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Search & Filter Bar */}
